@@ -105,6 +105,11 @@ st.markdown("""
         border: 1px solid rgba(168, 85, 247, 0.5);
         color: #c084fc;
     }
+    .pill-wealth {
+        background: rgba(251, 191, 36, 0.2);
+        border: 1px solid rgba(251, 191, 36, 0.5);
+        color: #fde047;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -289,32 +294,147 @@ SECRETS = {
     ]
 }
 
-# Appearance descriptions
-APPEARANCE_BASE = [
-    "Their hair is carefully braided with colored thread, adding warmth to practical attire.",
-    "Their armor bears scuffs and dents of real use, but is polished with obvious pride.",
-    "They smell faintly of incense and parchment, with ink stains on their fingers.",
-    "A streak of silver runs through their hair despite relatively young features.",
-    "Their clothes are a patchwork of careful repairs, suggesting sentimentality or frugality.",
-    "They favor layered, flowing fabrics with patterns echoing their homeland.",
-    "A small charm hangs from their neck or belt, worn smooth by anxious fingers.",
-    "Their boots are sturdy and travel-worn, but their hands are surprisingly soft.",
-    "They carry themselves with straight-backed discipline, even when trying to stay unnoticed.",
-    "Their eyes are alert and restless, tracking exits and faces almost unconsciously."
+# PHASE 1: EMERGENT VARIETY DATA
+
+# Body Types & Builds
+BODY_TYPES = [
+    "tall and lean", "short and stocky", "average height with a sturdy build",
+    "towering and muscular", "slight and wiry", "heavyset and solid",
+    "graceful and athletic", "compact and powerful", "lanky with long limbs",
+    "broad-shouldered", "delicate-featured", "barrel-chested"
 ]
 
-APPEARANCE_FEATURES = [
-    "A visible scar along the jaw, softened by a friendly expression.",
-    "Eyes that catch light in an unusual hue, suggesting distant bloodlines or subtle magic.",
-    "Elaborate tattoos peek from beneath sleeves, hinting at cultural significance.",
-    "A missing or prosthetic finger, compensated for with clever adjustments.",
-    "An ever-present smudge of soot, ink, or dust, no matter how often they clean.",
-    "Jewelry that is inexpensive but obviously well cared for, perhaps a family heirloom.",
-    "A subtle limp that only appears when tired or distracted.",
-    "A voice that is unexpectedly melodic, with a lilting cadence.",
-    "A laugh that comes suddenly and fully, often startling quieter patrons.",
-    "A gaze that lingers a heartbeat too long, weighing the truth of every word."
+# Age Ranges
+AGE_RANGES = {
+    "young adult": {"min": 18, "max": 30, "descriptor": "youthful energy"},
+    "adult": {"min": 31, "max": 50, "descriptor": "mature confidence"},
+    "middle-aged": {"min": 51, "max": 70, "descriptor": "seasoned experience"},
+    "elderly": {"min": 71, "max": 90, "descriptor": "weathered wisdom"}
+}
+
+# Hair Details
+HAIR_STYLES = [
+    "long and flowing", "kept in a tight bun", "cropped short", "shaved on one side",
+    "wild and unkempt", "meticulously braided", "pulled into a ponytail",
+    "adorned with beads and charms", "graying at the temples", "covered by a hood or wrap"
 ]
+
+HAIR_COLORS = [
+    "jet black", "dark brown", "auburn", "golden blonde", "silver-gray",
+    "platinum white", "copper red", "sandy brown", "salt-and-pepper",
+    "an unusual blue-black", "streaked with gray", "faded from sun exposure"
+]
+
+# Distinctive Features
+DISTINCTIVE_FEATURES = [
+    "a prominent scar across their cheek", "heterochromatic eyes (one blue, one green)",
+    "elaborate facial tattoos", "a missing tooth when they smile",
+    "a crooked nose from an old break", "striking amber eyes",
+    "calloused, work-worn hands", "unusually long fingers",
+    "a birthmark on their neck", "ears pierced with multiple rings",
+    "a burn scar on one forearm", "intricate henna-like markings on their hands"
+]
+
+# Clothing Condition
+CLOTHING_CONDITIONS = [
+    "impeccably tailored and clean", "worn but well-maintained", "patched in multiple places",
+    "mismatched but functional", "dusty from travel", "faded by sun and time",
+    "decorated with regional embroidery", "practical and nondescript",
+    "clearly expensive despite the wear", "stained with their trade's marks"
+]
+
+# Mannerisms
+MANNERISMS = [
+    "constantly fidgets with a ring or bracelet", "makes direct, unblinking eye contact",
+    "gestures expansively when speaking", "avoids eye contact, looking past people",
+    "touches their face or hair when nervous", "stands with arms crossed defensively",
+    "leans in close when listening", "drums their fingers on surfaces",
+    "has a habit of clearing their throat", "smiles with only one side of their mouth",
+    "adjusts their clothing obsessively", "laughs at unexpected moments"
+]
+
+# Trait Modifiers (Contradictions)
+TRAIT_MODIFIERS = [
+    "but is surprisingly superstitious about small things",
+    "but harbors a deep distrust of authority figures",
+    "but becomes reckless when protecting others",
+    "but is surprisingly well-read despite their rough exterior",
+    "but freezes up in actual combat situations",
+    "but is terrible at remembering names and faces",
+    "but is oddly sentimental about trivial objects",
+    "but has an unexpected talent for music or art",
+    "but becomes anxious in large crowds",
+    "but is completely tone-deaf to social cues",
+    "but has a quick temper when their work is criticized",
+    "but will go to extreme lengths to avoid conflict"
+]
+
+# Voice & Speech Characteristics
+VOICE_QUALITIES = [
+    "speaks with a melodious, almost musical cadence",
+    "has a rough, gravelly voice from years of shouting",
+    "speaks softly, forcing others to lean in to hear",
+    "has a booming voice that carries across rooms",
+    "speaks quickly, words tumbling over each other",
+    "chooses words carefully, with long pauses between sentences",
+    "has a slight stutter when nervous or excited",
+    "speaks in a monotone that's hard to read emotionally"
+]
+
+SPEECH_PATTERNS = [
+    "Uses elaborate metaphors and similes",
+    "Peppers speech with regional idioms",
+    "Tends to ramble and lose their train of thought",
+    "Speaks in short, clipped sentences",
+    "Frequently quotes scripture or old sayings",
+    "Uses technical jargon from their profession",
+    "Has a nervous laugh they inject between sentences",
+    "Refers to themselves in third person occasionally"
+]
+
+# Immediate Situations
+IMMEDIATE_SITUATIONS = [
+    "counting coins at a table with a worried expression",
+    "in the middle of a heated argument with a merchant",
+    "hastily writing a letter, occasionally glancing at the door",
+    "nursing a drink and watching the room's entrance",
+    "reading a book, lips moving slightly as they sound out words",
+    "bandaging a minor injury on their hand",
+    "trying to calm a nervous animal or familiar",
+    "haggling loudly over the price of goods",
+    "waiting anxiously, checking a pocket watch repeatedly",
+    "sharing a quiet conversation that stops when others approach",
+    "studying a map or document intently",
+    "eating a meal quickly, like they might need to leave at any moment"
+]
+
+# Wealth/Status Levels
+WEALTH_LEVELS = {
+    "destitute": {
+        "descriptor": "Struggling to survive",
+        "details": "Threadbare clothing, thin appearance, desperate undertones"
+    },
+    "poor": {
+        "descriptor": "Living hand-to-mouth",
+        "details": "Worn clothing, practical possessions only, cautious with money"
+    },
+    "modest": {
+        "descriptor": "Making ends meet",
+        "details": "Simple but serviceable clothing, can afford small comforts"
+    },
+    "comfortable": {
+        "descriptor": "Financially stable",
+        "details": "Quality clothing and gear, some luxuries, not worried about next meal"
+    },
+    "wealthy": {
+        "descriptor": "Living well",
+        "details": "Fine clothing, expensive accessories, servants or hired help"
+    },
+    "rich": {
+        "descriptor": "Among the elite",
+        "details": "Extravagant dress, jewelry, carries themselves with entitled confidence"
+    }
+}
 
 def generate_name():
     """Generate a random fantasy name"""
@@ -384,24 +504,85 @@ def pick_occupation(region):
     regional = OCCUPATIONS.get(region, [])
     return random.choice(base + regional)
 
-def generate_appearance():
-    """Generate appearance description"""
-    base = random.choice(APPEARANCE_BASE)
-    feature = random.choice(APPEARANCE_FEATURES)
-    return f"{base} {feature}"
+def generate_age():
+    """Generate age range and specific age"""
+    age_category = random.choice(list(AGE_RANGES.keys()))
+    age_data = AGE_RANGES[age_category]
+    specific_age = random.randint(age_data["min"], age_data["max"])
+    return {
+        "category": age_category,
+        "specific": specific_age,
+        "descriptor": age_data["descriptor"]
+    }
+
+def generate_composite_appearance():
+    """Generate detailed composite appearance"""
+    body = random.choice(BODY_TYPES)
+    hair_style = random.choice(HAIR_STYLES)
+    hair_color = random.choice(HAIR_COLORS)
+    feature = random.choice(DISTINCTIVE_FEATURES)
+    clothing = random.choice(CLOTHING_CONDITIONS)
+    mannerism = random.choice(MANNERISMS)
+    
+    return {
+        "body": body,
+        "hair": f"{hair_color}, {hair_style}",
+        "feature": feature,
+        "clothing": clothing,
+        "mannerism": mannerism,
+        "full": f"They are {body}, with {hair_color} hair {hair_style}. They have {feature}, and their clothing is {clothing}. They {mannerism}."
+    }
+
+def generate_voice():
+    """Generate voice and speech characteristics"""
+    quality = random.choice(VOICE_QUALITIES)
+    pattern = random.choice(SPEECH_PATTERNS)
+    return {
+        "quality": quality,
+        "pattern": pattern,
+        "full": f"{quality} {pattern}"
+    }
+
+def generate_wealth_level(occupation):
+    """Generate wealth level, influenced by occupation"""
+    # Some occupations are more likely to be wealthier
+    wealthy_occupations = ["merchant", "noble", "guild factor", "moneylender", "diplomat", "shipwright"]
+    poor_occupations = ["beggar", "urchin", "street vendor", "farmer", "laborer"]
+    
+    if any(occ in occupation.lower() for occ in wealthy_occupations):
+        levels = ["comfortable", "comfortable", "wealthy", "wealthy", "rich"]
+    elif any(occ in occupation.lower() for occ in poor_occupations):
+        levels = ["destitute", "poor", "poor", "modest"]
+    else:
+        levels = ["poor", "modest", "modest", "comfortable", "comfortable", "wealthy"]
+    
+    level = random.choice(levels)
+    return {"level": level, **WEALTH_LEVELS[level]}
+
+def add_personality_modifier(base_personality):
+    """Add a contradictory trait for depth"""
+    modifier = random.choice(TRAIT_MODIFIERS)
+    return f"{base_personality}, {modifier}"
 
 def generate_npc(region, tone):
-    """Generate complete NPC"""
+    """Generate complete NPC with emergent variety"""
+    occupation = pick_occupation(region)
+    base_personality = pick_from_tone(PERSONALITIES, tone)
+    
     npc = {
         "name": generate_name(),
         "race": pick_race(region),
         "gender": random.choice(GENDERS),
-        "occupation": pick_occupation(region),
+        "age": generate_age(),
+        "occupation": occupation,
+        "wealth": generate_wealth_level(occupation),
         "deity": pick_deity(region),
-        "personality": pick_from_tone(PERSONALITIES, tone),
+        "personality": add_personality_modifier(base_personality),
         "goal": pick_from_tone(GOALS, tone),
         "secret": pick_from_tone(SECRETS, tone),
-        "appearance": generate_appearance(),
+        "appearance": generate_composite_appearance(),
+        "voice": generate_voice(),
+        "situation": random.choice(IMMEDIATE_SITUATIONS),
         "region": region,
         "tone": tone
     }
@@ -416,11 +597,19 @@ def format_npc_text(npc):
     text = f"""NPC: {npc['name']}
 Race: {npc['race']}
 Gender: {npc['gender']}
+Age: {npc['age']['specific']} ({npc['age']['category']})
 Occupation: {npc['occupation'].title()}
+Wealth: {npc['wealth']['level'].title()} - {npc['wealth']['descriptor']}
 Deity: {deity_text}
 
+FIRST ENCOUNTER:
+{npc['situation']}
+
 APPEARANCE:
-{npc['appearance']}
+{npc['appearance']['full']}
+
+VOICE & MANNERISMS:
+{npc['voice']['full']}
 
 PERSONALITY:
 {npc['personality']}
@@ -471,45 +660,67 @@ st.markdown("---")
 if st.session_state.npc:
     npc = st.session_state.npc
     
+    # Name and basic info
+    st.markdown(f"<div class='npc-name'>{npc['name']}</div>", unsafe_allow_html=True)
+    
+    pills = f"""
+    <div>
+        <span class='pill pill-race'>{npc['race']}</span>
+        <span class='pill pill-gender'>{npc['gender']}</span>
+        <span class='pill pill-occupation'>{npc['occupation'].title()}</span>
+        <span class='pill pill-wealth'>{npc['wealth']['level'].title()}</span>
+    </div>
+    """
+    st.markdown(pills, unsafe_allow_html=True)
+    
+    # First Encounter situation - prominent placement
+    st.markdown("<div class='section-header'>👀 First Encounter</div>", unsafe_allow_html=True)
+    st.info(f"**When the party meets them:** {npc['situation']}")
+    
     # Main columns
     col_left, col_right = st.columns([1.5, 1])
     
     with col_left:
         # Identity Card
-        st.markdown(f"<div class='npc-name'>{npc['name']}</div>", unsafe_allow_html=True)
-        
-        pills = f"""
-        <div>
-            <span class='pill pill-race'>{npc['race']}</span>
-            <span class='pill pill-gender'>{npc['gender']}</span>
-            <span class='pill pill-occupation'>{npc['occupation'].title()}</span>
-        </div>
-        """
-        st.markdown(pills, unsafe_allow_html=True)
-        
         st.markdown("<div class='section-header'>📋 Identity</div>", unsafe_allow_html=True)
         
         id_col1, id_col2 = st.columns(2)
         with id_col1:
             st.markdown(f"<div class='info-label'>Race</div><div class='info-value'>{npc['race']}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='info-label'>Gender</div><div class='info-value'>{npc['gender']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='info-label'>Age</div><div class='info-value'>{npc['age']['specific']} ({npc['age']['category']})</div>", unsafe_allow_html=True)
         with id_col2:
             st.markdown(f"<div class='info-label'>Occupation</div><div class='info-value'>{npc['occupation'].title()}</div>", unsafe_allow_html=True)
             deity_text = "None / no patron"
             if npc['deity']:
                 deity_text = npc['deity']['name']
             st.markdown(f"<div class='info-label'>Deity</div><div class='info-value'>{deity_text}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='info-label'>Wealth</div><div class='info-value'>{npc['wealth']['level'].title()}</div>", unsafe_allow_html=True)
         
+        # Appearance - Detailed Breakdown
+        st.markdown("<div class='section-header'>👁️ Appearance</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-label'>Build</div><div class='info-value'>{npc['appearance']['body'].title()}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-label'>Hair</div><div class='info-value'>{npc['appearance']['hair'].title()}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-label'>Distinctive Feature</div><div class='info-value'>{npc['appearance']['feature'].title()}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-label'>Clothing</div><div class='info-value'>{npc['appearance']['clothing'].title()}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-label'>Mannerism</div><div class='info-value'>{npc['appearance']['mannerism'].title()}</div>", unsafe_allow_html=True)
+        
+        # Voice & Speech
+        st.markdown("<div class='section-header'>🗣️ Voice & Speech</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-label'>Voice Quality</div><div class='info-value'>{npc['voice']['quality']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-label'>Speech Pattern</div><div class='info-value'>{npc['voice']['pattern']}</div>", unsafe_allow_html=True)
+        
+    with col_right:
         # Personality & Hooks
         st.markdown("<div class='section-header'>🧠 Personality & Hooks</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='info-label'>Personality</div><div class='info-value'>{npc['personality']}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='info-label'>Goal</div><div class='info-value'>{npc['goal']}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='info-label'>Secret</div><div class='info-value'>{npc['secret']}</div>", unsafe_allow_html=True)
-    
-    with col_right:
-        # Appearance
-        st.markdown("<div class='section-header'>👁️ Appearance</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-value'>{npc['appearance']}</div>", unsafe_allow_html=True)
+        
+        # Wealth Details
+        st.markdown("<div class='section-header'>💰 Wealth & Status</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-label'>{npc['wealth']['descriptor']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-value'>{npc['wealth']['details']}</div>", unsafe_allow_html=True)
         
         # Deity Details
         if npc['deity']:
@@ -536,9 +747,23 @@ if st.session_state.npc:
 else:
     st.info("👆 Click **Generate** to create your first NPC!")
     st.markdown("""
-    This generator creates complete NPCs for your Tivmir campaign:
-    - **Identity**: Name, race, gender, occupation, deity
-    - **Personality**: Traits, goals, and secrets
-    - **Appearance**: Physical description
-    - **Customization**: Filter by region and tone
+    This generator creates complete NPCs for your Tivmir campaign with **emergent variety**:
+    
+    **Core Identity:**
+    - Name, race, gender, age, occupation, deity
+    
+    **Physical Presence:**
+    - Composite appearance (build, hair, distinctive features)
+    - Clothing condition and mannerisms
+    - Voice quality and speech patterns
+    
+    **Roleplay Hooks:**
+    - Personality with contradictory traits for depth
+    - Immediate situation when encountered
+    - Goals, secrets, and wealth level
+    
+    **Customization:**
+    - Filter by region and tone
+    - Race rarity weighting (Common → Very Rare)
+    - Occupation influenced by region
     """)
