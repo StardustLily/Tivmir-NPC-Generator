@@ -1,957 +1,247 @@
 import streamlit as st
 import random
-from datetime import datetime
 
-# Configure page
-st.set_page_config(
-    page_title="Tivmir NPC Forge",
-    page_icon="🎭",
-    layout="wide"
-)
+# ==========================================
+# 1. CONFIGURATION & CSS
+# ==========================================
+st.set_page_config(page_title="D&D 5e NPC Generator", page_icon="🎲", layout="centered")
 
-# Custom CSS for styling
+# Custom CSS to make the NPC card look like a D&D stat block
 st.markdown("""
 <style>
-    .main {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    }
-    .stButton>button {
-        background: linear-gradient(135deg, #22c55e, #22d3ee);
-        color: #0b1120;
-        font-weight: 600;
-        border-radius: 20px;
-        padding: 0.5rem 2rem;
-        border: none;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-    }
-    .stButton>button:hover {
-        box-shadow: 0 8px 16px rgba(34, 211, 238, 0.4);
-        transform: translateY(-2px);
-    }
-    div[data-testid="stMetricValue"] {
-        font-size: 1.2rem;
-    }
     .npc-card {
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid rgba(148, 163, 184, 0.3);
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        background-color: #fdf6e3; /* Parchment color */
+        border: 2px solid #8b0000; /* Dark Red border */
+        border-radius: 10px;
+        padding: 20px;
+        color: #333;
+        font-family: 'Georgia', serif;
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
     }
     .npc-name {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #e5e7eb;
-        margin-bottom: 0.5rem;
-        font-family: 'Georgia', serif;
+        font-size: 28px;
+        font-weight: bold;
+        color: #8b0000;
+        border-bottom: 2px solid #8b0000;
+        margin-bottom: 10px;
     }
-    .npc-subtitle {
-        font-size: 0.9rem;
-        color: #9ca3af;
-        margin-bottom: 1rem;
+    .npc-subhead {
+        font-size: 18px;
+        font-style: italic;
+        color: #555;
+        margin-bottom: 20px;
     }
-    .info-label {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: #9ca3af;
-        font-weight: 600;
+    .npc-section {
+        font-weight: bold;
+        color: #8b0000;
+        margin-top: 10px;
     }
-    .info-value {
-        font-size: 1rem;
-        color: #e5e7eb;
-        margin-bottom: 1rem;
-    }
-    .section-header {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #cbd5f5;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        border-bottom: 2px solid rgba(56, 189, 248, 0.3);
-        padding-bottom: 0.5rem;
-    }
-    .pill {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-right: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
-    .pill-race {
-        background: rgba(56, 189, 248, 0.2);
-        border: 1px solid rgba(56, 189, 248, 0.5);
-        color: #7dd3fc;
-    }
-    .pill-gender {
-        background: rgba(244, 114, 182, 0.2);
-        border: 1px solid rgba(244, 114, 182, 0.5);
-        color: #f9a8d4;
-    }
-    .pill-occupation {
-        background: rgba(52, 211, 153, 0.2);
-        border: 1px solid rgba(52, 211, 153, 0.5);
-        color: #bbf7d0;
-    }
-    .pill-deity {
-        background: rgba(168, 85, 247, 0.2);
-        border: 1px solid rgba(168, 85, 247, 0.5);
-        color: #c084fc;
-    }
-    .pill-wealth {
-        background: rgba(251, 191, 36, 0.2);
-        border: 1px solid rgba(251, 191, 36, 0.5);
-        color: #fde047;
+    .stButton>button {
+        width: 100%;
+        background-color: #8b0000;
+        color: white;
+        font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Tivmir Pantheon Data
-DEITIES = {
-    "Light": [
-        {"name": "Jaydis", "title": "God of Harmony and Balance", "flavor": "They seek balance in all things and mediate conflicts whenever possible."},
-        {"name": "Maya", "title": "Goddess of Day and Light", "flavor": "They embrace optimism and find hope even in dark times."},
-        {"name": "Solaren", "title": "Goddess of Truth and Clarity", "flavor": "They value honesty above all and cannot abide deception."},
-        {"name": "Vivarakan", "title": "Lord of Beginning and Vitality", "flavor": "They celebrate new ventures and fresh starts with infectious enthusiasm."},
-        {"name": "Zithra", "title": "God of Warmth and Pleasure", "flavor": "They enjoy life's comforts and encourage others to find joy in simple things."},
-    ],
-    "Neutral": [
-        {"name": "Apsen", "title": "Goddess of Travel and Crossroads", "flavor": "They are restless by nature and feel most at home on the road."},
-        {"name": "Auroris", "title": "Deity of Nature and Weather", "flavor": "They speak of natural cycles with reverence and track weather patterns obsessively."},
-        {"name": "Julevir", "title": "God of Inspiration and Creativity", "flavor": "They see art in unexpected places and encourage creative expression."},
-        {"name": "Jun", "title": "Deity of Dreams and Illusions", "flavor": "They speak in dreamy metaphors and seem to exist slightly out of phase with reality."},
-        {"name": "Mabu", "title": "Entity of Chaos and Entropy", "flavor": "They embrace unpredictability and find order stifling."},
-        {"name": "Ocea", "title": "Goddess of the Seas and Tides", "flavor": "They are drawn to water and feel uneasy when far from rivers or coast."},
-    ],
-    "Dark": [
-        {"name": "Alfind", "title": "Deity of Ending and Closure", "flavor": "They speak calmly of death and believe all things must eventually end."},
-        {"name": "Defenestria", "title": "Goddess of Frost and Pain", "flavor": "They have a cold demeanor and believe suffering strengthens the spirit."},
-        {"name": "Lolth", "title": "Lady of Trickery and War", "flavor": "They weigh relationships like webs of obligation and are quick to spot deception."},
-        {"name": "Noxtum", "title": "Lord of the Night and Shadows", "flavor": "They are most comfortable in darkness and speak in hushed tones."},
-        {"name": "Sable", "title": "Lady of Silence and Reflection", "flavor": "They value quiet contemplation and grow uncomfortable with excessive noise."},
-    ]
+# ==========================================
+# 2. DATA LISTS (The "Brain" of the Randomness)
+# ==========================================
+
+races = [
+    "Human", "Elf", "Dwarf", "Halfling", "Gnome", 
+    "Tiefling", "Dragonborn", "Half-Orc", "Half-Elf", 
+    "Tabaxi", "Aarakocra", "Genasi", "Goliath", "Changeling"
+]
+
+genders = ["Male", "Female", "Non-Binary"]
+
+occupations = {
+    "Commoner": ["Farmer", "Blacksmith", "Innkeeper", "Stablehand", "Cook", "Tailor", "Carpenter", "Miner"],
+    "Merchant": ["Traveling Merchant", "Jeweler", "Potion Seller", "Bookkeeper", "Art Dealer", "Smuggler"],
+    "Noble/Official": ["Town Guard", "Magistrate", "Noble Scion", "Tax Collector", "Diplomat", "Knight"],
+    "Specialized": ["Alchemist", "Wizard's Apprentice", "Bardic Performer", "Bounty Hunter", "Cultist", "Grave Digger"],
+    "Criminal": ["Thief", "Bandit", "Spy", "Fence", "Forger"]
 }
 
-# Tivmir Races with weights
-RACES = {
-    "Common": {
-        "races": ["Aarakocra", "Drow", "Elf", "Goblin", "Human", "Orc", "Tabaxi"],
-        "weight": 50
-    },
-    "Uncommon": {
-        "races": ["Goliath", "Halfling", "Half-Orc", "Kenku", "Leonin", "Lizardfolk", "Owlin", "Tortle"],
-        "weight": 30
-    },
-    "Rare": {
-        "races": ["Bugbear", "Dragonborn", "Half-Elf", "Harengon", "Loxodon", "Minotaur", "Tiefling", "Yuan-ti"],
-        "weight": 15
-    },
-    "Very Rare": {
-        "races": ["Aasimar", "Eladrin (Spring)", "Eladrin (Summer)", "Eladrin (Fall)", "Eladrin (Winter)",
-                  "Genasi (Air)", "Genasi (Earth)", "Genasi (Fire)", "Genasi (Water)",
-                  "Githyanki", "Gnome", "Shifter", "Triton"],
-        "weight": 5
-    }
-}
-
-GENDERS = ["Woman", "Man", "Nonbinary", "Genderfluid", "Agender"]
-
-# Occupation pools by region
-OCCUPATIONS = {
-    "any": [
-        "innkeeper", "wandering bard", "city guard", "street vendor", "scholar", "archivist",
-        "blacksmith", "apothecary", "hunter", "cartographer", "courier", "fence",
-        "steward", "sage", "monster scout", "village elder", "mercenary captain", "scribe",
-        "artisan", "shipwright", "coach driver", "herbalist", "fortune-teller", "diplomat",
-        "gravekeeper", "arena promoter", "temple acolyte", "librarian", "jeweler"
-    ],
-    "urban": [
-        "guild factor", "moneylender", "dock foreman", "thieves' guild contact", "street preacher",
-        "city official", "tavern owner", "pawnbroker", "messenger"
-    ],
-    "rural": [
-        "farmer", "mill worker", "shepherd", "beekeeper", "woodcutter", "village herbalist",
-        "brewer", "trapper", "weaver", "tinker", "midwife"
-    ],
-    "frontier": [
-        "monster hunter", "scout", "ranger guide", "camp quartermaster", "prospector",
-        "border guard", "smuggler", "beast wrangler", "wilderness tracker"
-    ],
-    "underdark": [
-        "mushroom farmer", "underground guide", "information broker", "poisoner",
-        "house retainer", "spore druid", "tunnel mapper", "crystal miner"
-    ],
-    "seafaring": [
-        "sailor", "ship's quartermaster", "harbormaster", "smuggler", "dockside bartender",
-        "navigator", "shipwright", "whaler", "net mender"
-    ],
-    "desert": [
-        "caravan master", "nomad scout", "oasis keeper", "sand mage", "spice merchant",
-        "camel handler", "ruin delver", "water diviner"
-    ],
-    "arctic": [
-        "trapper", "ice fisher", "sled driver", "whaler", "glacier guide",
-        "aurora mystic", "frontier priest", "fur trader"
-    ],
-    "religious": [
-        "temple acolyte", "high priest's aide", "choir leader", "itinerant preacher",
-        "scribe of holy texts", "relic keeper", "pilgrim guide", "shrine keeper"
-    ]
-}
-
-# Personality traits by tone
-PERSONALITIES = {
-    "any": [
-        "Warm and quick to laugh, but carefully watches what others reveal before sharing much.",
-        "Soft-spoken and courteous, with a habit of apologizing even when they've done nothing wrong.",
-        "Blunt and practical, more comfortable with tasks than with small talk.",
-        "Inquisitive to a fault, constantly asking how things work and why people made certain choices.",
-        "Charming and theatrical, treating even mundane events as if they were on stage.",
-        "Stoic and difficult to read, but observant of small details others miss.",
-        "Optimistic and energetic, always convinced the next opportunity will be the big one.",
-        "Dryly sarcastic, using humor to deflect when conversation gets too personal.",
-        "Methodical and precise, keeping everything in order and anxious when plans change.",
-        "Secretly sentimental, collecting small trinkets that remind them of places and people."
-    ],
-    "light": [
-        "Playfully dramatic, turning every story into an entertaining exaggeration.",
-        "Earnest and friendly, always eager to help and quick to trust.",
-        "A bit scatterbrained but endlessly enthusiastic about new ideas.",
-        "Loves gossip and rumors, but rarely repeats anything truly hurtful."
-    ],
-    "grim": [
-        "World-weary and guarded, assuming the worst to avoid disappointment.",
-        "Pragmatic to the point of cynicism, willing to make hard choices for survival.",
-        "Haunted by old mistakes and determined not to repeat them, even if it seems harsh."
-    ],
-    "mysterious": [
-        "Speaks in half-answers and parables, as if seeing patterns others cannot.",
-        "Calm and distant, studying others with the patience of a scribe reading ancient texts.",
-        "Occasionally uses terminology suggesting secret affiliations or forbidden knowledge."
-    ]
-}
-
-# Goals by tone
-GOALS = {
-    "any": [
-        "Wants to secure enough coin to retire somewhere quiet, away from conflict.",
-        "Hopes to prove themselves worthy of a mentor who once dismissed them.",
-        "Quietly gathering information about adventurers for a risky venture.",
-        "Aims to restore a damaged reputation after being blamed for someone else's failure.",
-        "Wants to map a forgotten route that would cut days off a common journey.",
-        "Searching for someone who disappeared years ago, following any rumor."
-    ],
-    "light": [
-        "Dreams of opening a small tavern that becomes the heart of their neighborhood.",
-        "Wants to organize a grand festival remembered for generations.",
-        "Hopes to collect travelers' stories and compile them into a book of legends."
-    ],
-    "grim": [
-        "Seeks leverage over a cruel authority figure who harmed their family.",
-        "Plans to pay off a dangerous debt before becoming an example to others.",
-        "Wants to expose corruption within a respected institution, whatever the cost."
-    ],
-    "mysterious": [
-        "Following cryptic prophecies suggesting their actions will influence distant events.",
-        "Hunts for an artifact they refuse to name, claiming too many ears are listening.",
-        "Needs specific information from travelers about distant lands, but never explains why."
-    ]
-}
-
-# Secrets by tone
-SECRETS = {
-    "any": [
-        "Once stole a minor relic from a temple, quietly returned it years later, but still fears discovery.",
-        "Connected by blood or oath to a powerful figure and hides their true surname.",
-        "Has a hidden stash of coin or contraband that even close friends know nothing about.",
-        "Quietly communicates with a rival faction, passing information for small favors.",
-        "Accidentally caused a tragedy in youth and has spent years making amends from the shadows.",
-        "Knows the location of a forgotten tunnel that bypasses a heavily guarded area.",
-        "Far more skilled than they pretend, using a humble role as convenient disguise.",
-        "Carries a token marking them as part of a secret society most assume is only rumor."
-    ],
-    "light": [
-        "Secretly writes romantic ballads about local adventurers under a pseudonym.",
-        "Has been feeding a stray magical creature that has started following them around town.",
-        "Keeps a detailed, mildly embarrassing scrapbook of heroes and villains passing through."
-    ],
-    "grim": [
-        "Once accepted payment to look the other way during a crime and has been blackmailed since.",
-        "Smuggles medicine and supplies to a forbidden group authorities consider dangerous.",
-        "Knows a respected local leader is involved in something foul—but confronting them alone would be fatal."
-    ],
-    "mysterious": [
-        "Has dreams that sometimes show real events from far away, though they don't understand why.",
-        "Carries a sealed letter to deliver only to someone matching a vague description—which fits one of the party.",
-        "Can see faint ghostlike figures in mirrors and still water, and tries hard to pretend they cannot."
-    ]
-}
-
-# PHASE 2: QUEST HOOKS, RELATIONSHIPS, AND WEAKNESSES
-
-# Quest Hooks / Plot Seeds
-QUEST_HOOKS = {
-    "any": [
-        "Needs someone to deliver a sealed package to the next town, but won't say what's inside.",
-        "Looking for mercenaries to clear creatures from their basement—they're 'unusually large' rats.",
-        "Has a map to a nearby ruin but is too afraid to investigate alone.",
-        "Needs protection while traveling to meet someone important.",
-        "Lost a valuable family heirloom and suspects it was stolen.",
-        "Wants someone to verify rumors they've heard about a local figure.",
-        "Needs help retrieving something from a dangerous area.",
-        "Looking for someone to mediate a dispute they can't resolve alone.",
-        "Has information to sell about a location, person, or event.",
-        "Needs witnesses for an important transaction or meeting.",
-        "Wants adventurers to investigate strange occurrences in the area.",
-        "Has a business opportunity but needs skilled partners."
-    ],
-    "light": [
-        "Needs help organizing a festival or celebration that's gotten out of hand.",
-        "Looking for someone to find their missing pet (it's quite unusual).",
-        "Wants to play matchmaker but needs help arranging a romantic meeting.",
-        "Has lost a bet and needs help fulfilling the embarrassing consequences."
-    ],
-    "grim": [
-        "Needs someone to collect a debt from a dangerous individual.",
-        "Looking for mercenaries to send a message to someone who wronged them.",
-        "Has information about a conspiracy but is too afraid to act alone.",
-        "Needs help disappearing—someone powerful is looking for them.",
-        "Wants revenge but lacks the means to achieve it themselves."
-    ],
-    "mysterious": [
-        "Has received prophetic dreams about the party and needs their help interpreting them.",
-        "Claims to have seen something impossible and needs it investigated.",
-        "Possesses an artifact they don't understand and wants identified.",
-        "Has been contacted by something otherworldly and doesn't know why.",
-        "Knows of a ritual that must be performed, but the details are cryptic."
-    ]
-}
-
-# NPC Relationships
-RELATIONSHIP_TYPES = [
-    "Has a sibling somewhere in {region} they haven't spoken to in years",
-    "Owes a significant debt to a local merchant or moneylender",
-    "Is secretly in love with someone unattainable",
-    "Has a bitter rival in the same profession",
-    "Was apprenticed to a master they now resent",
-    "Is estranged from their family over an old argument",
-    "Has a childhood friend who became something they despise",
-    "Serves as an informant for a faction, though few know it",
-    "Is being blackmailed by someone in town",
-    "Has a patron or mentor who expects regular reports",
-    "Lost someone important and hasn't moved on",
-    "Is the bastard child of someone prominent",
-    "Has a twin or doppelganger causing trouble under their name",
-    "Was betrayed by a former partner or lover",
-    "Owes their life to someone and hasn't repaid the debt"
+# Domains for deities to keep it setting-agnostic but flavorful
+domains = [
+    "War", "Life", "Light", "Nature", "Tempest", "Trickery", "Knowledge", 
+    "Death", "Forge", "Grave", "Order", "Peace", "Twilight", "Arcana"
 ]
 
-# Tivmir-specific relationship variants
-TIVMIR_RELATIONSHIPS = [
-    "Has relatives in Kratoria involved in Orcish politics",
-    "Was exiled from their tribe in Múnlǔdì for breaking tradition",
-    "Owes money to a merchant guild in one of Hasar's royal courts",
-    "Is hiding from someone in the Underdark who wants them dead",
-    "Has contacts among the Lizardfolk in Sabhaith",
-    "Was part of an expedition to Sonma-Tua that went badly",
-    "Knows secrets about a noble house in their region",
-    "Is descended from survivors of the Elven Cataclysm",
-    "Has done work for the Aarakocra warrior nation",
-    "Was involved in a failed business venture on Katsa"
+personalities = [
+    "Anxious and jittery", "Boisterous and loud", "Stoic and unreadable", "Charming and flirtatious",
+    "Grumpy and cynical", "Optimistic and naive", "Arrogant and condensation", "Quiet and observant",
+    "Scatterbrained", "Suspicious of everyone", "Generous to a fault", "Cowardly but boastful"
 ]
 
-# Fears, Phobias, and Weaknesses
-FEARS_PHYSICAL = [
-    "Has a bad knee that acts up in cold or damp weather",
-    "Is partially deaf in one ear from an old injury",
-    "Has weak lungs and struggles with smoke or dust",
-    "Gets violently seasick on boats",
-    "Has a severe allergy to a common substance",
-    "Suffers from chronic migraines triggered by stress",
-    "Has poor night vision and is nearly blind in darkness",
-    "Has trembling hands that worsen when anxious"
+appearances_build = ["Lanky", "Muscular", "Portly", "Petite", "Towering", "Wiry", "Stocky", "Elegant"]
+appearances_quirk = [
+    "missing a tooth", "has a jagged scar across the cheek", "wears too much perfume", 
+    "has heterochromia (different colored eyes)", "is constantly fidgeting with a coin",
+    "wears an eyepatch", "has intricate tattoos", "smells faintly of sulfur",
+    "has very long, unkempt hair", "wears impeccably clean clothes", "is covered in flour/dust"
 ]
 
-FEARS_PSYCHOLOGICAL = [
-    "Terrified of magic, especially arcane spellcasting",
-    "Cannot stand enclosed spaces and panics in tight areas",
-    "Has a crippling fear of deep water",
-    "Is deeply uncomfortable around authority figures",
-    "Freezes when confronted with violence or blood",
-    "Cannot tolerate being alone for extended periods",
-    "Has an irrational fear of a specific type of creature (spiders, dogs, birds)",
-    "Becomes anxious in crowds or large gatherings",
-    "Cannot stand being lied to, even small white lies",
-    "Is paranoid about being poisoned and won't accept food from strangers",
-    "Has nightmares about fire and avoids open flames when possible",
-    "Fears death to an irrational degree and avoids all risk"
+goals = [
+    "To clear their family name", "To earn enough gold to buy a ship", "To find a cure for a sick relative",
+    "To get revenge on a rival", "To become the mayor of this town", "To hide from their dark past",
+    "To find the best ale in the realm", "To prove they are not a coward", "To interpret a strange dream",
+    "To pay off a debt to a crime lord"
 ]
 
-SOCIAL_WEAKNESSES = [
-    "Is a terrible liar and their face gives everything away",
-    "Has a gambling addiction they can't control",
-    "Drinks too much when stressed or upset",
-    "Is incredibly gullible and believes obvious lies",
-    "Has a weakness for flattery and can be easily manipulated with praise",
-    "Cannot resist a sob story and gives away money they can't afford",
-    "Is fiercely proud and takes any criticism as a mortal insult",
-    "Becomes reckless and impulsive when angry",
-    "Is obsessively greedy despite their current wealth level",
-    "Has loose lips after a few drinks and shares secrets easily"
+secrets = [
+    "Is actually a silver dragon in disguise (or thinks they are)", "Murdered the previous shop owner",
+    "Is a spy for a neighboring kingdom", "Worships a banned dark deity in secret",
+    "Has a stash of stolen goods under the floorboards", "Is a lycanthrope trying to control it",
+    "Is actually two goblins in a trench coat", "Knows the location of a lost artifact",
+    "Is having an affair with the local noble", "Is currently possessed by a minor ghost"
 ]
 
-# Body Types & Builds
-BODY_TYPES = [
-    "tall and lean", "short and stocky", "average height with a sturdy build",
-    "towering and muscular", "slight and wiry", "heavyset and solid",
-    "graceful and athletic", "compact and powerful", "lanky with long limbs",
-    "broad-shouldered", "delicate-featured", "barrel-chested"
-]
+# Name components for procedural generation
+syllables_start = ["Ad", "Ae", "Ara", "Bal", "Be", "Car", "Da", "El", "Fa", "Gil", "Hro", "Ia", "Ka", "Lor", "Mar", "Nor", "O", "Pa", "Qu", "Ri", "Sha", "Tho", "Ul", "Val", "Xan", "Za"]
+syllables_end = ["bar", "ced", "dall", "fal", "gorn", "hian", "ius", "jo", "kell", "las", "mor", "nai", "orin", "par", "quen", "rath", "stus", "th", "und", "var", "wyn", "xis", "yark", "zen"]
+surnames = ["Lightfoot", "Ironfist", "Stormwind", "Oakenheart", "Shadowwalker", "Brightwood", "Goldseeker", "Swiftfoot", "Moonwhisper", "Stoutshield", "Duskbreaker", "Fireforge"]
 
-# Age Ranges
-AGE_RANGES = {
-    "young adult": {"min": 18, "max": 30, "descriptor": "youthful energy"},
-    "adult": {"min": 31, "max": 50, "descriptor": "mature confidence"},
-    "middle-aged": {"min": 51, "max": 70, "descriptor": "seasoned experience"},
-    "elderly": {"min": 71, "max": 90, "descriptor": "weathered wisdom"}
-}
+# ==========================================
+# 3. LOGIC FUNCTIONS
+# ==========================================
 
-# Hair Details
-HAIR_STYLES = [
-    "long and flowing", "kept in a tight bun", "cropped short", "shaved on one side",
-    "wild and unkempt", "meticulously braided", "pulled into a ponytail",
-    "adorned with beads and charms", "graying at the temples", "covered by a hood or wrap"
-]
-
-HAIR_COLORS = [
-    "jet black", "dark brown", "auburn", "golden blonde", "silver-gray",
-    "platinum white", "copper red", "sandy brown", "salt-and-pepper",
-    "an unusual blue-black", "streaked with gray", "faded from sun exposure"
-]
-
-# Distinctive Features
-DISTINCTIVE_FEATURES = [
-    "a prominent scar across their cheek", "heterochromatic eyes (one blue, one green)",
-    "elaborate facial tattoos", "a missing tooth when they smile",
-    "a crooked nose from an old break", "striking amber eyes",
-    "calloused, work-worn hands", "unusually long fingers",
-    "a birthmark on their neck", "ears pierced with multiple rings",
-    "a burn scar on one forearm", "intricate henna-like markings on their hands"
-]
-
-# Clothing Condition
-CLOTHING_CONDITIONS = [
-    "impeccably tailored and clean", "worn but well-maintained", "patched in multiple places",
-    "mismatched but functional", "dusty from travel", "faded by sun and time",
-    "decorated with regional embroidery", "practical and nondescript",
-    "clearly expensive despite the wear", "stained with their trade's marks"
-]
-
-# Mannerisms
-MANNERISMS = [
-    "constantly fidgets with a ring or bracelet", "makes direct, unblinking eye contact",
-    "gestures expansively when speaking", "avoids eye contact, looking past people",
-    "touches their face or hair when nervous", "stands with arms crossed defensively",
-    "leans in close when listening", "drums their fingers on surfaces",
-    "has a habit of clearing their throat", "smiles with only one side of their mouth",
-    "adjusts their clothing obsessively", "laughs at unexpected moments"
-]
-
-# Trait Modifiers (Contradictions)
-TRAIT_MODIFIERS = [
-    "but is surprisingly superstitious about small things",
-    "but harbors a deep distrust of authority figures",
-    "but becomes reckless when protecting others",
-    "but is surprisingly well-read despite their rough exterior",
-    "but freezes up in actual combat situations",
-    "but is terrible at remembering names and faces",
-    "but is oddly sentimental about trivial objects",
-    "but has an unexpected talent for music or art",
-    "but becomes anxious in large crowds",
-    "but is completely tone-deaf to social cues",
-    "but has a quick temper when their work is criticized",
-    "but will go to extreme lengths to avoid conflict"
-]
-
-# Voice & Speech Characteristics
-VOICE_QUALITIES = [
-    "speaks with a melodious, almost musical cadence",
-    "has a rough, gravelly voice from years of shouting",
-    "speaks softly, forcing others to lean in to hear",
-    "has a booming voice that carries across rooms",
-    "speaks quickly, words tumbling over each other",
-    "chooses words carefully, with long pauses between sentences",
-    "has a slight stutter when nervous or excited",
-    "speaks in a monotone that's hard to read emotionally"
-]
-
-SPEECH_PATTERNS = [
-    "Uses elaborate metaphors and similes",
-    "Peppers speech with regional idioms",
-    "Tends to ramble and lose their train of thought",
-    "Speaks in short, clipped sentences",
-    "Frequently quotes scripture or old sayings",
-    "Uses technical jargon from their profession",
-    "Has a nervous laugh they inject between sentences",
-    "Refers to themselves in third person occasionally"
-]
-
-# Immediate Situations
-IMMEDIATE_SITUATIONS = [
-    "counting coins at a table with a worried expression",
-    "in the middle of a heated argument with a merchant",
-    "hastily writing a letter, occasionally glancing at the door",
-    "nursing a drink and watching the room's entrance",
-    "reading a book, lips moving slightly as they sound out words",
-    "bandaging a minor injury on their hand",
-    "trying to calm a nervous animal or familiar",
-    "haggling loudly over the price of goods",
-    "waiting anxiously, checking a pocket watch repeatedly",
-    "sharing a quiet conversation that stops when others approach",
-    "studying a map or document intently",
-    "eating a meal quickly, like they might need to leave at any moment"
-]
-
-# Wealth/Status Levels
-WEALTH_LEVELS = {
-    "destitute": {
-        "descriptor": "Struggling to survive",
-        "details": "Threadbare clothing, thin appearance, desperate undertones"
-    },
-    "poor": {
-        "descriptor": "Living hand-to-mouth",
-        "details": "Worn clothing, practical possessions only, cautious with money"
-    },
-    "modest": {
-        "descriptor": "Making ends meet",
-        "details": "Simple but serviceable clothing, can afford small comforts"
-    },
-    "comfortable": {
-        "descriptor": "Financially stable",
-        "details": "Quality clothing and gear, some luxuries, not worried about next meal"
-    },
-    "wealthy": {
-        "descriptor": "Living well",
-        "details": "Fine clothing, expensive accessories, servants or hired help"
-    },
-    "rich": {
-        "descriptor": "Among the elite",
-        "details": "Extravagant dress, jewelry, carries themselves with entitled confidence"
-    }
-}
-
-def generate_name():
-    """Generate a random fantasy name"""
-    starts = ["Al", "Ba", "Bel", "Cal", "Da", "El", "Fa", "Gal", "Ka", "La", "Ma", "Na", "Or", "Per", 
-              "Ra", "Sa", "Sha", "Ta", "Ther", "Va", "Vor", "Za", "Zel", "Kor", "Jun", "Eri", "Lio", 
-              "Syl", "Thal", "Xan"]
-    mids = ["a", "e", "i", "o", "u", "ae", "ia", "ai", "ea", "ou", "ar", "ir", "or", "ur", 
-            "an", "en", "in", "on", "el", "il", "as", "is", "os"]
-    ends = ["n", "s", "th", "r", "nd", "l", "mir", "dor", "drim", "zor", "thar", "das", "ric", 
-            "mon", "var", "gorn", "dil", "morn", "viel", "non", "dris", "vash", "dane", "riel", "thor"]
-    surnames = ["Amberfall", "Blackwater", "Stormwind", "Duskhollow", "Brightshield", "Ironvein",
-                "Thornbriar", "Nightbloom", "Riversong", "Stonebrook", "Highspire", "Ashwillow",
-                "Silverstring", "Glimmerforge", "Frostglen", "Shadowfen", "Goldmantle", "Oakensong",
-                "Moonridge", "Cinderstep", "Hawkspear", "Deepcurrent", "Starwatch", "Windrider"]
+def generate_name(race):
+    # Simple name generator (expandable based on race logic if desired)
+    # For a simple script, we mix syllables.
+    first = random.choice(syllables_start) + random.choice(syllables_end)
+    last = random.choice(surnames)
     
-    syllables = random.choice([2, 3])
-    first = random.choice(starts)
-    if syllables == 3:
-        first += random.choice(mids)
-    first += random.choice(ends)
-    
-    if random.random() < 0.75:
-        return f"{first} {random.choice(surnames)}"
-    return first
+    # Racial tweaks (Optional flavor)
+    if race in ["Dwarf", "Orc", "Half-Orc"]:
+        first = random.choice(["Grum", "Thar", "Bor", "Hul", "Krag", "Mag"]) + random.choice(["dar", "gorn", "ak", "uk", "tar"])
+    elif race in ["Elf", "Half-Elf"]:
+        first = random.choice(["Ael", "Eri", "Lia", "The", "Val", "Xil"]) + random.choice(["thir", "wyn", "ian", "ora", "sar"])
+        
+    return f"{first.capitalize()} {last}"
 
-def pick_race(region):
-    """Pick a race based on region, weighted by rarity"""
-    base_races = []
-    
-    # Build weighted list
-    for rarity, data in RACES.items():
-        base_races.extend([(race, data["weight"]) for race in data["races"]])
-    
-    # Regional modifications
-    if region == "urban":
-        base_races.extend([("Human", 30), ("Half-Elf", 20), ("Tiefling", 15)])
-    elif region == "rural":
-        base_races.extend([("Human", 40), ("Halfling", 25), ("Dwarf", 15)])
-    elif region == "underdark":
-        base_races.extend([("Drow", 50), ("Drow", 50)])
-    
-    races, weights = zip(*base_races)
-    return random.choices(races, weights=weights)[0]
+def get_deity_string(domain):
+    # Generates a deity string that fits homebrew
+    generic_titles = ["The Watcher", "The All-Father", "The Silver Lady", "The Storm King", "The Judge", "The Whisperer"]
+    return f"{random.choice(generic_titles)} (God of {domain})"
 
-def pick_deity(region):
-    """Pick a deity or None"""
-    no_deity_chance = 0.18 if region != "religious" else 0.05
+def generate_npc(filters):
+    # 1. Race
+    race = filters['race'] if filters['race'] != "Random" else random.choice(races)
     
-    if random.random() < no_deity_chance:
-        return None
+    # 2. Gender
+    gender = filters['gender'] if filters['gender'] != "Random" else random.choice(genders)
     
-    # Randomly pick from all pantheons
-    all_deities = DEITIES["Light"] + DEITIES["Neutral"] + DEITIES["Dark"]
-    return random.choice(all_deities)
-
-def pick_from_tone(pool, tone):
-    """Pick from pool considering tone"""
-    if tone == "any" or tone not in pool:
-        return random.choice(pool["any"])
-    # Merge any + specific tone
-    merged = pool["any"] + pool[tone]
-    return random.choice(merged)
-
-def pick_occupation(region):
-    """Pick occupation based on region"""
-    base = OCCUPATIONS["any"]
-    regional = OCCUPATIONS.get(region, [])
-    return random.choice(base + regional)
-
-def generate_age():
-    """Generate age range and specific age"""
-    age_category = random.choice(list(AGE_RANGES.keys()))
-    age_data = AGE_RANGES[age_category]
-    specific_age = random.randint(age_data["min"], age_data["max"])
-    return {
-        "category": age_category,
-        "specific": specific_age,
-        "descriptor": age_data["descriptor"]
-    }
-
-def generate_composite_appearance():
-    """Generate detailed composite appearance"""
-    body = random.choice(BODY_TYPES)
-    hair_style = random.choice(HAIR_STYLES)
-    hair_color = random.choice(HAIR_COLORS)
-    feature = random.choice(DISTINCTIVE_FEATURES)
-    clothing = random.choice(CLOTHING_CONDITIONS)
-    mannerism = random.choice(MANNERISMS)
-    
-    return {
-        "body": body,
-        "hair": f"{hair_color}, {hair_style}",
-        "feature": feature,
-        "clothing": clothing,
-        "mannerism": mannerism,
-        "full": f"They are {body}, with {hair_color} hair {hair_style}. They have {feature}, and their clothing is {clothing}. They {mannerism}."
-    }
-
-def generate_voice():
-    """Generate voice and speech characteristics"""
-    quality = random.choice(VOICE_QUALITIES)
-    pattern = random.choice(SPEECH_PATTERNS)
-    return {
-        "quality": quality,
-        "pattern": pattern,
-        "full": f"{quality} {pattern}"
-    }
-
-def generate_wealth_level(occupation):
-    """Generate wealth level, influenced by occupation"""
-    # Some occupations are more likely to be wealthier
-    wealthy_occupations = ["merchant", "noble", "guild factor", "moneylender", "diplomat", "shipwright"]
-    poor_occupations = ["beggar", "urchin", "street vendor", "farmer", "laborer"]
-    
-    if any(occ in occupation.lower() for occ in wealthy_occupations):
-        levels = ["comfortable", "comfortable", "wealthy", "wealthy", "rich"]
-    elif any(occ in occupation.lower() for occ in poor_occupations):
-        levels = ["destitute", "poor", "poor", "modest"]
+    # 3. Occupation
+    if filters['occupation'] != "Random":
+        # User picked a category (e.g., "Merchant")
+        # We pick a specific job from that category
+        job = random.choice(occupations[filters['occupation']])
     else:
-        levels = ["poor", "modest", "modest", "comfortable", "comfortable", "wealthy"]
-    
-    level = random.choice(levels)
-    return {"level": level, **WEALTH_LEVELS[level]}
+        # Pick a random category then a random job
+        cat = random.choice(list(occupations.keys()))
+        job = random.choice(occupations[cat])
 
-def add_personality_modifier(base_personality):
-    """Add a contradictory trait for depth"""
-    modifier = random.choice(TRAIT_MODIFIERS)
-    return f"{base_personality}, {modifier}"
+    # 4. Name
+    name = generate_name(race)
 
-def generate_quest_hook(tone):
-    """Generate a quest hook based on tone"""
-    return pick_from_tone(QUEST_HOOKS, tone)
+    # 5. Appearance
+    app_str = f"{random.choice(appearances_build)} build. Distinctive feature: {random.choice(appearances_quirk)}."
 
-def generate_relationship(region):
-    """Generate NPC relationship, sometimes Tivmir-specific"""
-    # 30% chance for Tivmir-specific relationship
-    if random.random() < 0.3:
-        relationship = random.choice(TIVMIR_RELATIONSHIPS)
-    else:
-        relationship = random.choice(RELATIONSHIP_TYPES)
-        # Replace {region} placeholder with actual region name
-        if "{region}" in relationship:
-            region_names = {
-                "urban": "the city",
-                "rural": "the countryside",
-                "frontier": "the frontier",
-                "underdark": "the Underdark",
-                "seafaring": "the coastal regions",
-                "desert": "the desert lands",
-                "arctic": "the frozen north",
-                "religious": "the holy city",
-                "any": "Tivmir"
-            }
-            relationship = relationship.replace("{region}", region_names.get(region, "the region"))
-    return relationship
+    # 6. Deity
+    worships = "None/Atheist"
+    if random.random() > 0.15: # 85% chance to worship someone
+        worships = get_deity_string(random.choice(domains))
 
-def generate_weakness():
-    """Generate a fear, phobia, or weakness"""
-    weakness_type = random.choice(["physical", "psychological", "social"])
-    
-    if weakness_type == "physical":
-        return {
-            "type": "Physical Weakness",
-            "description": random.choice(FEARS_PHYSICAL)
-        }
-    elif weakness_type == "psychological":
-        return {
-            "type": "Fear/Phobia",
-            "description": random.choice(FEARS_PSYCHOLOGICAL)
-        }
-    else:
-        return {
-            "type": "Social Weakness",
-            "description": random.choice(SOCIAL_WEAKNESSES)
-        }
-
-def generate_npc(region, tone):
-    """Generate complete NPC with emergent variety"""
-    occupation = pick_occupation(region)
-    base_personality = pick_from_tone(PERSONALITIES, tone)
-    
-    npc = {
-        "name": generate_name(),
-        "race": pick_race(region),
-        "gender": random.choice(GENDERS),
-        "age": generate_age(),
-        "occupation": occupation,
-        "wealth": generate_wealth_level(occupation),
-        "deity": pick_deity(region),
-        "personality": add_personality_modifier(base_personality),
-        "goal": pick_from_tone(GOALS, tone),
-        "secret": pick_from_tone(SECRETS, tone),
-        "appearance": generate_composite_appearance(),
-        "voice": generate_voice(),
-        "situation": random.choice(IMMEDIATE_SITUATIONS),
-        "quest_hook": generate_quest_hook(tone),
-        "relationship": generate_relationship(region),
-        "weakness": generate_weakness(),
-        "region": region,
-        "tone": tone
+    return {
+        "Name": name,
+        "Race": race,
+        "Gender": gender,
+        "Occupation": job,
+        "Appearance": app_str,
+        "Personality": random.choice(personalities),
+        "Deity": worships,
+        "Goal": random.choice(goals),
+        "Secret": random.choice(secrets)
     }
-    return npc
 
-def format_npc_text(npc):
-    """Format NPC as plain text for copying"""
-    deity_text = "None / no fixed patron"
-    if npc["deity"]:
-        deity_text = f"{npc['deity']['name']}, {npc['deity']['title']}"
-    
-    text = f"""NPC: {npc['name']}
-Race: {npc['race']}
-Gender: {npc['gender']}
-Age: {npc['age']['specific']} ({npc['age']['category']})
-Occupation: {npc['occupation'].title()}
-Wealth: {npc['wealth']['level'].title()} - {npc['wealth']['descriptor']}
-Deity: {deity_text}
+# ==========================================
+# 4. STREAMLIT UI LAYOUT
+# ==========================================
 
-FIRST ENCOUNTER:
-{npc['situation']}
+st.title("🐉 Homebrew NPC Generator")
+st.write("Generate unique NPCs for your D&D 5e campaign instantly.")
 
-APPEARANCE:
-{npc['appearance']['full']}
+# --- Sidebar Filters ---
+st.sidebar.header("⚙️ Configuration")
+st.sidebar.write("Lock specific attributes or leave them random.")
 
-VOICE & MANNERISMS:
-{npc['voice']['full']}
+sel_race = st.sidebar.selectbox("Race", ["Random"] + races)
+sel_gender = st.sidebar.selectbox("Gender", ["Random"] + genders)
+sel_job = st.sidebar.selectbox("Occupation Category", ["Random"] + list(occupations.keys()))
 
-PERSONALITY:
-{npc['personality']}
+if st.sidebar.button("Generate New NPC"):
+    st.session_state['npc'] = generate_npc({
+        "race": sel_race,
+        "gender": sel_gender,
+        "occupation": sel_job
+    })
 
-GOAL:
-{npc['goal']}
+# --- Main Display ---
 
-SECRET:
-{npc['secret']}
-
-QUEST HOOK:
-{npc['quest_hook']}
-
-RELATIONSHIP:
-{npc['relationship']}
-
-WEAKNESS:
-{npc['weakness']['type']}: {npc['weakness']['description']}
-"""
-    return text
-
-# Initialize session state
+# Initialize session state if first load
 if 'npc' not in st.session_state:
-    st.session_state.npc = None
+    st.session_state['npc'] = generate_npc({
+        "race": "Random",
+        "gender": "Random",
+        "occupation": "Random"
+    })
 
-# Header
-st.markdown("# 🎭 NPC FORGE")
-st.markdown("### *Generate adventure-ready NPCs for your Tivmir campaign*")
-st.markdown("---")
+npc = st.session_state['npc']
 
-# Controls
-col1, col2, col3 = st.columns([2, 2, 1])
-
-with col1:
-    region = st.selectbox(
-        "Region Flavor",
-        ["any", "urban", "rural", "frontier", "underdark", "seafaring", "desert", "arctic", "religious"],
-        format_func=lambda x: x.replace("_", " ").title() if x != "any" else "Any"
-    )
-
-with col2:
-    tone = st.selectbox(
-        "Tone",
-        ["any", "light", "grim", "mysterious"],
-        format_func=lambda x: x.replace("_", " ").title() if x != "any" else "Any"
-    )
-
-with col3:
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("✨ GENERATE", use_container_width=True):
-        st.session_state.npc = generate_npc(region, tone)
-        st.rerun()
-
-st.markdown("---")
-
-# Display NPC
-if st.session_state.npc:
-    npc = st.session_state.npc
+# Display the "Card"
+st.markdown(f"""
+<div class="npc-card">
+    <div class="npc-name">{npc['Name']}</div>
+    <div class="npc-subhead">{npc['Gender']} {npc['Race']} {npc['Occupation']}</div>
     
-    # Name and basic info
-    st.markdown(f"<div class='npc-name'>{npc['name']}</div>", unsafe_allow_html=True)
-    
-    pills = f"""
-    <div>
-        <span class='pill pill-race'>{npc['race']}</span>
-        <span class='pill pill-gender'>{npc['gender']}</span>
-        <span class='pill pill-occupation'>{npc['occupation'].title()}</span>
-        <span class='pill pill-wealth'>{npc['wealth']['level'].title()}</span>
+    <hr style="border-color: #8b0000; opacity: 0.3;">
+
+    <div style="display: flex; flex-wrap: wrap;">
+        <div style="flex: 50%; padding-right: 10px;">
+            <div class="npc-section">👀 Appearance</div>
+            <div>{npc['Appearance']}</div>
+            
+            <div class="npc-section">🧠 Personality</div>
+            <div>{npc['Personality']}</div>
+            
+            <div class="npc-section">🙏 Worships</div>
+            <div>{npc['Deity']}</div>
+        </div>
+        <div style="flex: 50%;">
+            <div class="npc-section">🎯 Current Goal</div>
+            <div>{npc['Goal']}</div>
+            
+            <div class="npc-section">🤫 Secret</div>
+            <div>{npc['Secret']}</div>
+        </div>
     </div>
-    """
-    st.markdown(pills, unsafe_allow_html=True)
-    
-    # First Encounter situation - prominent placement
-    st.markdown("<div class='section-header'>👀 First Encounter</div>", unsafe_allow_html=True)
-    st.info(f"**When the party meets them:** {npc['situation']}")
-    
-    # Quest Hook - very important for DMs!
-    st.markdown("<div class='section-header'>⚔️ Quest Hook</div>", unsafe_allow_html=True)
-    st.success(f"**Potential adventure:** {npc['quest_hook']}")
-    
-    # Main columns
-    col_left, col_right = st.columns([1.5, 1])
-    
-    with col_left:
-        # Identity Card
-        st.markdown("<div class='section-header'>📋 Identity</div>", unsafe_allow_html=True)
-        
-        id_col1, id_col2 = st.columns(2)
-        with id_col1:
-            st.markdown(f"<div class='info-label'>Race</div><div class='info-value'>{npc['race']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='info-label'>Gender</div><div class='info-value'>{npc['gender']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='info-label'>Age</div><div class='info-value'>{npc['age']['specific']} ({npc['age']['category']})</div>", unsafe_allow_html=True)
-        with id_col2:
-            st.markdown(f"<div class='info-label'>Occupation</div><div class='info-value'>{npc['occupation'].title()}</div>", unsafe_allow_html=True)
-            deity_text = "None / no patron"
-            if npc['deity']:
-                deity_text = npc['deity']['name']
-            st.markdown(f"<div class='info-label'>Deity</div><div class='info-value'>{deity_text}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='info-label'>Wealth</div><div class='info-value'>{npc['wealth']['level'].title()}</div>", unsafe_allow_html=True)
-        
-        # Appearance - Detailed Breakdown
-        st.markdown("<div class='section-header'>👁️ Appearance</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Build</div><div class='info-value'>{npc['appearance']['body'].title()}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Hair</div><div class='info-value'>{npc['appearance']['hair'].title()}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Distinctive Feature</div><div class='info-value'>{npc['appearance']['feature'].title()}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Clothing</div><div class='info-value'>{npc['appearance']['clothing'].title()}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Mannerism</div><div class='info-value'>{npc['appearance']['mannerism'].title()}</div>", unsafe_allow_html=True)
-        
-        # Voice & Speech
-        st.markdown("<div class='section-header'>🗣️ Voice & Speech</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Voice Quality</div><div class='info-value'>{npc['voice']['quality']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Speech Pattern</div><div class='info-value'>{npc['voice']['pattern']}</div>", unsafe_allow_html=True)
-        
-    with col_right:
-        # Personality & Hooks
-        st.markdown("<div class='section-header'>🧠 Personality & Hooks</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Personality</div><div class='info-value'>{npc['personality']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Goal</div><div class='info-value'>{npc['goal']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>Secret</div><div class='info-value'>{npc['secret']}</div>", unsafe_allow_html=True)
-        
-        # Relationship
-        st.markdown("<div class='section-header'>🔗 Relationship</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-value'>{npc['relationship']}</div>", unsafe_allow_html=True)
-        
-        # Weakness
-        st.markdown("<div class='section-header'>⚠️ Weakness</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>{npc['weakness']['type']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-value'>{npc['weakness']['description']}</div>", unsafe_allow_html=True)
-        
-        # Wealth Details
-        st.markdown("<div class='section-header'>💰 Wealth & Status</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-label'>{npc['wealth']['descriptor']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-value'>{npc['wealth']['details']}</div>", unsafe_allow_html=True)
-        
-        # Deity Details
-        if npc['deity']:
-            st.markdown("<div class='section-header'>⚜️ Deity Details</div>", unsafe_allow_html=True)
-            deity_pill = f"<span class='pill pill-deity'>{npc['deity']['name']}</span>"
-            st.markdown(deity_pill, unsafe_allow_html=True)
-            st.markdown(f"<div class='info-label'>{npc['deity']['title']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='info-value'>{npc['deity']['flavor']}</div>", unsafe_allow_html=True)
-        
-        # DM Notes
-        st.markdown("<div class='section-header'>✍️ DM Notes</div>", unsafe_allow_html=True)
-        dm_notes = st.text_area("Your notes", height=100, 
-                                placeholder="Add relationships, plot hooks, or how this NPC connects to your campaign...")
-        
-        # Copy button
-        npc_text = format_npc_text(npc)
-        if st.button("📋 Copy NPC as Text", use_container_width=True):
-            st.code(npc_text, language=None)
-            st.success("✅ NPC details shown above - copy to clipboard manually")
-    
-    st.markdown("---")
-    st.markdown("*Tip: Every NPC now includes quest hooks and relationships • Built for Tivmir homebrew 5e*")
+</div>
+""", unsafe_allow_html=True)
 
-else:
-    st.info("👆 Click **Generate** to create your first NPC!")
-    st.markdown("""
-    This generator creates complete NPCs for your Tivmir campaign with **emergent variety**:
-    
-    **Core Identity:**
-    - Name, race, gender, age, occupation, deity
-    
-    **Physical Presence:**
-    - Composite appearance (build, hair, distinctive features)
-    - Clothing condition and mannerisms
-    - Voice quality and speech patterns
-    
-    **Roleplay Hooks:**
-    - Personality with contradictory traits for depth
-    - Immediate situation when encountered
-    - Goals, secrets, and wealth level
-    
-    **Campaign Integration (NEW - Phase 2):**
-    - 🎯 **Quest hooks** - Instant adventure seeds
-    - 🔗 **Relationships** - Connections to other NPCs and Tivmir locations
-    - ⚠️ **Weaknesses** - Fears, phobias, and vulnerabilities for depth
-    
-    **Customization:**
-    - Filter by region and tone
-    - Race rarity weighting (Common → Very Rare)
-    - Occupation influenced by region
+# --- Export Option (Simple Copy) ---
+st.markdown("###") # Spacer
+with st.expander("📋 Copy Text Format"):
+    st.text(f"""
+    Name: {npc['Name']}
+    Race/Gender: {npc['Race']} {npc['Gender']}
+    Occupation: {npc['Occupation']}
+    Appearance: {npc['Appearance']}
+    Personality: {npc['Personality']}
+    Deity: {npc['Deity']}
+    Goal: {npc['Goal']}
+    Secret: {npc['Secret']}
     """)
