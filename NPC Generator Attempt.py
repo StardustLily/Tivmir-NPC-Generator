@@ -294,7 +294,118 @@ SECRETS = {
     ]
 }
 
-# PHASE 1: EMERGENT VARIETY DATA
+# PHASE 2: QUEST HOOKS, RELATIONSHIPS, AND WEAKNESSES
+
+# Quest Hooks / Plot Seeds
+QUEST_HOOKS = {
+    "any": [
+        "Needs someone to deliver a sealed package to the next town, but won't say what's inside.",
+        "Looking for mercenaries to clear creatures from their basement—they're 'unusually large' rats.",
+        "Has a map to a nearby ruin but is too afraid to investigate alone.",
+        "Needs protection while traveling to meet someone important.",
+        "Lost a valuable family heirloom and suspects it was stolen.",
+        "Wants someone to verify rumors they've heard about a local figure.",
+        "Needs help retrieving something from a dangerous area.",
+        "Looking for someone to mediate a dispute they can't resolve alone.",
+        "Has information to sell about a location, person, or event.",
+        "Needs witnesses for an important transaction or meeting.",
+        "Wants adventurers to investigate strange occurrences in the area.",
+        "Has a business opportunity but needs skilled partners."
+    ],
+    "light": [
+        "Needs help organizing a festival or celebration that's gotten out of hand.",
+        "Looking for someone to find their missing pet (it's quite unusual).",
+        "Wants to play matchmaker but needs help arranging a romantic meeting.",
+        "Has lost a bet and needs help fulfilling the embarrassing consequences."
+    ],
+    "grim": [
+        "Needs someone to collect a debt from a dangerous individual.",
+        "Looking for mercenaries to send a message to someone who wronged them.",
+        "Has information about a conspiracy but is too afraid to act alone.",
+        "Needs help disappearing—someone powerful is looking for them.",
+        "Wants revenge but lacks the means to achieve it themselves."
+    ],
+    "mysterious": [
+        "Has received prophetic dreams about the party and needs their help interpreting them.",
+        "Claims to have seen something impossible and needs it investigated.",
+        "Possesses an artifact they don't understand and wants identified.",
+        "Has been contacted by something otherworldly and doesn't know why.",
+        "Knows of a ritual that must be performed, but the details are cryptic."
+    ]
+}
+
+# NPC Relationships
+RELATIONSHIP_TYPES = [
+    "Has a sibling somewhere in {region} they haven't spoken to in years",
+    "Owes a significant debt to a local merchant or moneylender",
+    "Is secretly in love with someone unattainable",
+    "Has a bitter rival in the same profession",
+    "Was apprenticed to a master they now resent",
+    "Is estranged from their family over an old argument",
+    "Has a childhood friend who became something they despise",
+    "Serves as an informant for a faction, though few know it",
+    "Is being blackmailed by someone in town",
+    "Has a patron or mentor who expects regular reports",
+    "Lost someone important and hasn't moved on",
+    "Is the bastard child of someone prominent",
+    "Has a twin or doppelganger causing trouble under their name",
+    "Was betrayed by a former partner or lover",
+    "Owes their life to someone and hasn't repaid the debt"
+]
+
+# Tivmir-specific relationship variants
+TIVMIR_RELATIONSHIPS = [
+    "Has relatives in Kratoria involved in Orcish politics",
+    "Was exiled from their tribe in Múnlǔdì for breaking tradition",
+    "Owes money to a merchant guild in one of Hasar's royal courts",
+    "Is hiding from someone in the Underdark who wants them dead",
+    "Has contacts among the Lizardfolk in Sabhaith",
+    "Was part of an expedition to Sonma-Tua that went badly",
+    "Knows secrets about a noble house in their region",
+    "Is descended from survivors of the Elven Cataclysm",
+    "Has done work for the Aarakocra warrior nation",
+    "Was involved in a failed business venture on Katsa"
+]
+
+# Fears, Phobias, and Weaknesses
+FEARS_PHYSICAL = [
+    "Has a bad knee that acts up in cold or damp weather",
+    "Is partially deaf in one ear from an old injury",
+    "Has weak lungs and struggles with smoke or dust",
+    "Gets violently seasick on boats",
+    "Has a severe allergy to a common substance",
+    "Suffers from chronic migraines triggered by stress",
+    "Has poor night vision and is nearly blind in darkness",
+    "Has trembling hands that worsen when anxious"
+]
+
+FEARS_PSYCHOLOGICAL = [
+    "Terrified of magic, especially arcane spellcasting",
+    "Cannot stand enclosed spaces and panics in tight areas",
+    "Has a crippling fear of deep water",
+    "Is deeply uncomfortable around authority figures",
+    "Freezes when confronted with violence or blood",
+    "Cannot tolerate being alone for extended periods",
+    "Has an irrational fear of a specific type of creature (spiders, dogs, birds)",
+    "Becomes anxious in crowds or large gatherings",
+    "Cannot stand being lied to, even small white lies",
+    "Is paranoid about being poisoned and won't accept food from strangers",
+    "Has nightmares about fire and avoids open flames when possible",
+    "Fears death to an irrational degree and avoids all risk"
+]
+
+SOCIAL_WEAKNESSES = [
+    "Is a terrible liar and their face gives everything away",
+    "Has a gambling addiction they can't control",
+    "Drinks too much when stressed or upset",
+    "Is incredibly gullible and believes obvious lies",
+    "Has a weakness for flattery and can be easily manipulated with praise",
+    "Cannot resist a sob story and gives away money they can't afford",
+    "Is fiercely proud and takes any criticism as a mortal insult",
+    "Becomes reckless and impulsive when angry",
+    "Is obsessively greedy despite their current wealth level",
+    "Has loose lips after a few drinks and shares secrets easily"
+]
 
 # Body Types & Builds
 BODY_TYPES = [
@@ -564,6 +675,53 @@ def add_personality_modifier(base_personality):
     modifier = random.choice(TRAIT_MODIFIERS)
     return f"{base_personality}, {modifier}"
 
+def generate_quest_hook(tone):
+    """Generate a quest hook based on tone"""
+    return pick_from_tone(QUEST_HOOKS, tone)
+
+def generate_relationship(region):
+    """Generate NPC relationship, sometimes Tivmir-specific"""
+    # 30% chance for Tivmir-specific relationship
+    if random.random() < 0.3:
+        relationship = random.choice(TIVMIR_RELATIONSHIPS)
+    else:
+        relationship = random.choice(RELATIONSHIP_TYPES)
+        # Replace {region} placeholder with actual region name
+        if "{region}" in relationship:
+            region_names = {
+                "urban": "the city",
+                "rural": "the countryside",
+                "frontier": "the frontier",
+                "underdark": "the Underdark",
+                "seafaring": "the coastal regions",
+                "desert": "the desert lands",
+                "arctic": "the frozen north",
+                "religious": "the holy city",
+                "any": "Tivmir"
+            }
+            relationship = relationship.replace("{region}", region_names.get(region, "the region"))
+    return relationship
+
+def generate_weakness():
+    """Generate a fear, phobia, or weakness"""
+    weakness_type = random.choice(["physical", "psychological", "social"])
+    
+    if weakness_type == "physical":
+        return {
+            "type": "Physical Weakness",
+            "description": random.choice(FEARS_PHYSICAL)
+        }
+    elif weakness_type == "psychological":
+        return {
+            "type": "Fear/Phobia",
+            "description": random.choice(FEARS_PSYCHOLOGICAL)
+        }
+    else:
+        return {
+            "type": "Social Weakness",
+            "description": random.choice(SOCIAL_WEAKNESSES)
+        }
+
 def generate_npc(region, tone):
     """Generate complete NPC with emergent variety"""
     occupation = pick_occupation(region)
@@ -583,6 +741,9 @@ def generate_npc(region, tone):
         "appearance": generate_composite_appearance(),
         "voice": generate_voice(),
         "situation": random.choice(IMMEDIATE_SITUATIONS),
+        "quest_hook": generate_quest_hook(tone),
+        "relationship": generate_relationship(region),
+        "weakness": generate_weakness(),
         "region": region,
         "tone": tone
     }
@@ -619,6 +780,15 @@ GOAL:
 
 SECRET:
 {npc['secret']}
+
+QUEST HOOK:
+{npc['quest_hook']}
+
+RELATIONSHIP:
+{npc['relationship']}
+
+WEAKNESS:
+{npc['weakness']['type']}: {npc['weakness']['description']}
 """
     return text
 
@@ -628,7 +798,7 @@ if 'npc' not in st.session_state:
 
 # Header
 st.markdown("# 🎭 NPC FORGE")
-st.markdown("### *Generate flavorful NPCs for your Tivmir campaign*")
+st.markdown("### *Generate adventure-ready NPCs for your Tivmir campaign*")
 st.markdown("---")
 
 # Controls
@@ -677,6 +847,10 @@ if st.session_state.npc:
     st.markdown("<div class='section-header'>👀 First Encounter</div>", unsafe_allow_html=True)
     st.info(f"**When the party meets them:** {npc['situation']}")
     
+    # Quest Hook - very important for DMs!
+    st.markdown("<div class='section-header'>⚔️ Quest Hook</div>", unsafe_allow_html=True)
+    st.success(f"**Potential adventure:** {npc['quest_hook']}")
+    
     # Main columns
     col_left, col_right = st.columns([1.5, 1])
     
@@ -717,6 +891,15 @@ if st.session_state.npc:
         st.markdown(f"<div class='info-label'>Goal</div><div class='info-value'>{npc['goal']}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='info-label'>Secret</div><div class='info-value'>{npc['secret']}</div>", unsafe_allow_html=True)
         
+        # Relationship
+        st.markdown("<div class='section-header'>🔗 Relationship</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-value'>{npc['relationship']}</div>", unsafe_allow_html=True)
+        
+        # Weakness
+        st.markdown("<div class='section-header'>⚠️ Weakness</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-label'>{npc['weakness']['type']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-value'>{npc['weakness']['description']}</div>", unsafe_allow_html=True)
+        
         # Wealth Details
         st.markdown("<div class='section-header'>💰 Wealth & Status</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='info-label'>{npc['wealth']['descriptor']}</div>", unsafe_allow_html=True)
@@ -742,7 +925,7 @@ if st.session_state.npc:
             st.success("✅ NPC details shown above - copy to clipboard manually")
     
     st.markdown("---")
-    st.markdown("*Tip: Click Generate again for a new NPC • Built for Tivmir homebrew 5e*")
+    st.markdown("*Tip: Every NPC now includes quest hooks and relationships • Built for Tivmir homebrew 5e*")
 
 else:
     st.info("👆 Click **Generate** to create your first NPC!")
@@ -761,6 +944,11 @@ else:
     - Personality with contradictory traits for depth
     - Immediate situation when encountered
     - Goals, secrets, and wealth level
+    
+    **Campaign Integration (NEW - Phase 2):**
+    - 🎯 **Quest hooks** - Instant adventure seeds
+    - 🔗 **Relationships** - Connections to other NPCs and Tivmir locations
+    - ⚠️ **Weaknesses** - Fears, phobias, and vulnerabilities for depth
     
     **Customization:**
     - Filter by region and tone
